@@ -5,10 +5,23 @@
 
 using color = vec3;
 
+inline double linear_to_gamma(double linear_component) {
+    if (linear_component > 0)
+        return sqrt(linear_component);
+
+    return 0;
+}
+
 inline void write_color(std::ostream& out, const color& pixel_color) {
-    const auto r = pixel_color.x();
-    const auto g = pixel_color.y();
-    const auto b = pixel_color.z();
+    auto r = pixel_color.x();
+    auto g = pixel_color.y();
+    auto b = pixel_color.z();
+
+    // apply linear to gamma 2 transform
+
+    r = linear_to_gamma(r);
+    g = linear_to_gamma(g);
+    b = linear_to_gamma(b);
 
     // translate components into byte range [0,255]
     static const interval intensity(0.000, 0.999);
