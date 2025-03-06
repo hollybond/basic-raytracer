@@ -30,8 +30,8 @@ inline std::mt19937 generate() {
 
 inline std::mt19937 mt{ generate() };
 
-inline double random_double() {
-    return std::uniform_real_distribution{0.0, 1.0}(mt);
+inline double random_double(const double min = 0.0, const double max = 1.0) {
+    return std::uniform_real_distribution{min, max}(mt);
 }
 
 #include "vec3.h"
