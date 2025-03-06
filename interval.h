@@ -9,16 +9,22 @@ public:
 
     interval(const double min, const double max) : min(min), max(max) {};
 
-    const double size() const {
+    double size() const {
         return max - min;
     }
 
-    const bool contains(const double x) const {
+    bool contains(const double x) const {
         return x >= min && x <= max;
     }
 
-    const bool surrounds(const double x) const {
+    bool surrounds(const double x) const {
         return min < x && x < max;
+    }
+
+    double clamp(double x) const {
+        if (x < min) return min;
+        if (x > max) return max;
+        return x;
     }
 
     static const interval empty, universe;

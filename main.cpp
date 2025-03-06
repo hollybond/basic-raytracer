@@ -6,6 +6,7 @@
 #include "sphere.h"
 
 int main() {
+
     // world
 
     hittable_list world;
