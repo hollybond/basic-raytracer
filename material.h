@@ -54,4 +54,32 @@ private:
     double fuzz;
 };
 
+class dielectric : public material {
+public:
+    explicit dielectric(const double refraction_index) : refraction_index(refraction_index) {};
+
+    bool scatter(const ray &r_in, const hit_record &rec, color &attenuation, ray &scattered)
+    const override {
+        attenuation = color(1.0, 1.0, 1.0);
+        const double ri = rec.front_face ? (1.0/refraction_index) : refraction_index;
+
+        const vec3 unit_direction = unit_vector(r_in.direction());
+        const double cos_theta = std::fmin(dot(-unit_direction, rec.normal), 1.0);
+        const double sin_theta = std::sqrt(1 - cos_theta*cos_theta);
+
+        vec3 direction;
+
+        if (ri * sin_theta > 1.0)
+            direction = reflect(unit_direction, rec.normal);
+        else
+            direction = refract(unit_direction, rec.normal, ri);
+
+        scattered = ray(rec.p, direction);
+        return true;
+    }
+private:
+    // refractive index in air or ratio of mat's refractive index to refractive index of enclosing media
+    double refraction_index{};
+};
+
 #endif //MATERIAL_H
