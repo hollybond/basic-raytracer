@@ -40,7 +40,7 @@ public:
         return true;
     }
 private:
-    const point3& center;
+    const point3 center;
     const double radius;
     shared_ptr<material> mat;
 };
