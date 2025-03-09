@@ -16,6 +16,9 @@ public:
     point3 lookat   = point3(0,0,-1);
     point3 vup      = point3(0,1,0);
 
+    double defocus_angle    = 0;
+    double focus_dist       = 10;
+
     void render(const hittable &world) {
         initialize();
 
@@ -44,6 +47,8 @@ private:
     vec3    pixel_delta_u;
     vec3    pixel_delta_v;
     vec3    u, v, w;
+    vec3    defocus_disk_u;
+    vec3    defocus_disk_v;
 
     void initialize() {
         // image height must be at least 1
@@ -54,10 +59,9 @@ private:
 
         center = lookfrom;
 
-        const double focal_length = (lookfrom - lookat).length();
         const double theta = degrees_to_radians(vfov);
         const double h = std::tan(theta/2);
-        const double viewport_height = 2 * h * focal_length;
+        const double viewport_height = 2 * h * focus_dist;
         const double viewport_width{viewport_height * image_width / image_height};
 
         // u, v, w basis of camera coordinate frame
@@ -75,17 +79,23 @@ private:
         pixel_delta_v = viewport_v / image_height;
 
         // find upper left pixel of viewport
-        const vec3 viewport_upper_left = center - (focal_length * w) - viewport_u / 2 - viewport_v / 2;
+        const vec3 viewport_upper_left = center - (focus_dist * w) - viewport_u / 2 - viewport_v / 2;
         pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + 0.5 * pixel_delta_v);
+
+        //calculate camera defocus disk basis vectors
+        auto defocus_radius = focus_dist * std::tan(degrees_to_radians(defocus_angle/2));
+        defocus_disk_u = u * defocus_radius;
+        defocus_disk_v = v * defocus_radius;
     }
 
     ray get_ray(const int i, const int j) const {
-        // ray from origin to randomly sampled point about i, j
+        // construct camera ray from defocus disk to randomly sampled point around
+        // pixel location i, j
         const auto offset = sample_square();
         const auto pixel_sample = pixel00_loc + ((i + offset.x()) * pixel_delta_u)
                                 + ((j + offset.y()) * pixel_delta_v);
 
-        const auto ray_origin = center;
+        const auto ray_origin = (defocus_angle <= 0) ? center : defocus_disk_sample();
         const auto ray_direction = pixel_sample - ray_origin;
 
         return {ray_origin, ray_direction};
@@ -93,6 +103,12 @@ private:
 
     vec3 sample_square() const {
         return { random_double() - 0.5, random_double() - 0.5, 0 };
+    }
+
+    point3 defocus_disk_sample() const {
+        // returns random point on defocus disk
+        auto p = random_in_unit_disk();
+        return center + (p[0] * defocus_disk_u) + (p[1] * defocus_disk_v);
     }
 
     static color ray_color(const ray &r, const int depth, const hittable &world) {
