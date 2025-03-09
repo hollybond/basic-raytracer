@@ -11,6 +11,11 @@ public:
     int     samples_per_pixel   = 10;
     int     max_depth           = 10;
 
+    double vfov     = 90;
+    point3 lookfrom = point3(0,0,0);
+    point3 lookat   = point3(0,0,-1);
+    point3 vup      = point3(0,1,0);
+
     void render(const hittable &world) {
         initialize();
 
@@ -38,6 +43,7 @@ private:
     point3  pixel00_loc;
     vec3    pixel_delta_u;
     vec3    pixel_delta_v;
+    vec3    u, v, w;
 
     void initialize() {
         // image height must be at least 1
@@ -46,24 +52,30 @@ private:
 
         pixel_samples_scale = 1.0 / samples_per_pixel;
 
-        center = {0, 0, 0};
+        center = lookfrom;
 
-        constexpr double focal_length{1.0};
-        constexpr double viewport_height{2.0};
+        const double focal_length = (lookfrom - lookat).length();
+        const double theta = degrees_to_radians(vfov);
+        const double h = std::tan(theta/2);
+        const double viewport_height = 2 * h * focal_length;
         const double viewport_width{viewport_height * image_width / image_height};
 
+        // u, v, w basis of camera coordinate frame
+        w = unit_vector(lookfrom - lookat);
+        u = unit_vector(cross(vup, w));
+        v = cross(w, u);
 
         // vectors defining viewport horizontal and vertical edges
         // y-axis of camera is inverted to viewport
-        const vec3 viewport_u{viewport_width, 0, 0};
-        const vec3 viewport_v{0, -viewport_height, 0};
+        const vec3 viewport_u = viewport_width * u;
+        const vec3 viewport_v = viewport_height * -v;
 
         // horizontal and vertical delta vectors
         pixel_delta_u = viewport_u / image_width;
         pixel_delta_v = viewport_v / image_height;
 
         // find upper left pixel of viewport
-        const vec3 viewport_upper_left{center - vec3(0, 0, focal_length) - viewport_u / 2 - viewport_v / 2};
+        const vec3 viewport_upper_left = center - (focal_length * w) - viewport_u / 2 - viewport_v / 2;
         pixel00_loc = viewport_upper_left + 0.5 * (pixel_delta_u + 0.5 * pixel_delta_v);
     }
 
